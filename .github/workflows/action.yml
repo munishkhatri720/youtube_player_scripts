@@ -1,12 +1,9 @@
 name: Update YouTube Player Script
 
 on:
-  push:
-    branches:
-      - dev
   workflow_dispatch:
   schedule:
-    - cron: '30 0 * * *'
+    - cron: "0 * * * *"
 
 permissions:
   contents: write
@@ -24,7 +21,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install UV
         run: pip install uv
@@ -85,13 +82,13 @@ jobs:
         if: steps.branch-check.outputs.exists == 'false'
         uses: peter-evans/create-pull-request@v5
         with:
-            token: ${{ secrets.GITHUB_TOKEN }}
-            base: dev                        
-            branch: ${{ steps.detect.outputs.branch }}
-            title: "Update player script: ${{ steps.detect.outputs.player_id }}"
-            commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
-            body: |
-              This PR updates the YouTube decryption script for player ID `${{ steps.detect.outputs.player_id }}`.
-              - Generated on ${{ github.run_date }}
-              - Includes new `base.js` bundle.
-            labels: automated
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: ${{ steps.detect.outputs.branch }}
+          title: "Update player script: ${{ steps.detect.outputs.player_id }}"
+          commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
+          body: |
+            This PR updates the YouTube decryption script for player ID `${{ steps.detect.outputs.player_id }}`.
+            - Generated on ${{ github.run_date }}
+            - Includes new `base.js` bundle.
+          labels: automated
