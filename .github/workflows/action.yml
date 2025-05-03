@@ -3,7 +3,7 @@ name: Update YouTube Player Script
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "0 * * * *"  # every hour at minute 0
 
 permissions:
   contents: write
@@ -29,16 +29,20 @@ jobs:
       - name: Install deps
         run: uv sync
 
-      - name: Snapshot before
-        run: ls -1 | sort > before.txt
+      - name: Snapshot before (dirs only)
+        run: |
+          find . -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | sort > before.txt
 
       - name: Fetch and build JS
         run: uv run workflow.py
 
+      - name: Snapshot after (dirs only)
+        run: |
+          find . -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | sort > after.txt
+
       - name: Detect new directory
         id: detect
         run: |
-          ls -1 | sort > after.txt
           NEW_DIR=$(comm -13 before.txt after.txt | head -n1)
           if [ -z "$NEW_DIR" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
