@@ -9,7 +9,7 @@ on:
     - cron: '30 0 * * *'
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
   check-player:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          #persist-credentials: true
+          persist-credentials: true
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -28,12 +28,12 @@ jobs:
 
       - name: Install UV
         run: pip install uv
-      
-      - name : Install deps
-        run : uv sync 
+
+      - name: Install deps
+        run: uv sync
 
       - name: Snapshot before
-        run: ls -1 | sort > before.txt  
+        run: ls -1 | sort > before.txt
 
       - name: Fetch and build JS
         run: uv run workflow.py
@@ -42,7 +42,7 @@ jobs:
         id: detect
         run: |
           ls -1 | sort > after.txt
-          NEW_DIR=$(comm -13 before.txt after.txt)
+          NEW_DIR=$(comm -13 before.txt after.txt | head -n1)
           if [ -z "$NEW_DIR" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
@@ -76,6 +76,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BR"
+          rm -f before.txt after.txt
           git add --all
           git commit -m "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
           git push --set-upstream origin "$BR"
