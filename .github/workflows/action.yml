@@ -22,6 +22,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name : Install UV
+        run : pip install uv
+
       - name: Fetch and build JS
         run: uv run workflow.py
 
