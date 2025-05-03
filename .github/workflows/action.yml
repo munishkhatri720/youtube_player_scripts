@@ -1,6 +1,9 @@
 name: Update YouTube Player Script
 
 on:
+  push:
+    branches:
+        - dev
   workflow_dispatch:
   schedule:
     - cron: '30 0 * * *'  
