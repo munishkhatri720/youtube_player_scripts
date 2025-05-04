@@ -3,7 +3,7 @@ name: Update YouTube Player Script
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"  # every hour at minute 0
+    - cron: "0 * * * *"   # every hour
 
 permissions:
   contents: write
@@ -23,11 +23,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install UV
-        run: pip install uv
-
-      - name: Install deps
-        run: uv sync
+      - name: Install UV & deps
+        run: |
+          pip install uv
+          uv sync
 
       - name: Snapshot before (dirs only)
         run: |
@@ -48,7 +47,7 @@ jobs:
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-          echo "player_id=$NEW_DIR" >> $GITHUB_OUTPUT
+          echo "player_id=$NEW_DIR"  >> $GITHUB_OUTPUT
           echo "branch=update-player-$NEW_DIR" >> $GITHUB_OUTPUT
 
       - name: Skip if nothing new
@@ -59,8 +58,7 @@ jobs:
         if: steps.detect.outputs.skip != 'true'
         id: branch-check
         run: |
-          BR=${{ steps.detect.outputs.branch }}
-          if git ls-remote --heads origin "$BR" | grep -q "$BR"; then
+          if git ls-remote --heads origin "${{ steps.detect.outputs.branch }}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -68,18 +66,20 @@ jobs:
 
       - name: Abort if branch exists
         if: steps.branch-check.outputs.exists == 'true'
-        run: echo "Branch ${{ steps.detect.outputs.branch }} already exists, skipping PR."
+        run: echo "Branch ${{ steps.detect.outputs.branch }} already exists, skipping."
 
-      - name: Create branch & push
+      - name: Create branch, commit & push
         if: steps.branch-check.outputs.exists == 'false'
         run: |
           BR=${{ steps.detect.outputs.branch }}
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BR"
+          # remove snapshot files so they don’t get added
           rm -f before.txt after.txt
-          git add --all
-          git commit -m "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
+          # add only the new dir
+          git add "$NEW_DIR"
+          git commit -m "chore: update YouTube player script for $NEW_DIR"
           git push --set-upstream origin "$BR"
 
       - name: Create Pull Request
@@ -87,12 +87,12 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: main
+          base: dev
           branch: ${{ steps.detect.outputs.branch }}
           title: "Update player script: ${{ steps.detect.outputs.player_id }}"
           commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
           body: |
             This PR updates the YouTube decryption script for player ID `${{ steps.detect.outputs.player_id }}`.
             - Generated on ${{ github.run_date }}
-            - Includes new `base.js` bundle.
+            - Includes the new `base.js` bundle.
           labels: automated
