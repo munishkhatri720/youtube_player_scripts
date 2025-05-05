@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   check-player:
@@ -30,14 +31,14 @@ jobs:
 
       - name: Snapshot before (dirs only)
         run: |
-          find . -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | sort > before.txt
+          find . -maxdepth 1 -mindepth 1 -type d -not -path "*/\.*" -printf "%f\n" | sort > before.txt
 
       - name: Fetch and build JS
         run: uv run workflow.py
 
       - name: Snapshot after (dirs only)
         run: |
-          find . -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | sort > after.txt
+          find . -maxdepth 1 -mindepth 1 -type d -not -path "*/\.*" -printf "%f\n" | sort > after.txt
 
       - name: Detect new directory
         id: detect
@@ -47,52 +48,58 @@ jobs:
             echo "skip=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-          echo "player_id=$NEW_DIR"  >> $GITHUB_OUTPUT
+          echo "player_id=$NEW_DIR" >> $GITHUB_OUTPUT
           echo "branch=update-player-$NEW_DIR" >> $GITHUB_OUTPUT
+          echo "New player detected: $NEW_DIR"
 
       - name: Skip if nothing new
         if: steps.detect.outputs.skip == 'true'
         run: echo "Nothing to update."
 
+      - name: Configure Git
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Check remote branch
         if: steps.detect.outputs.skip != 'true'
         id: branch-check
         run: |
-          if git ls-remote --heads origin "${{ steps.detect.outputs.branch }}" | grep -q .; then
+          if git ls-remote --heads origin "refs/heads/${{ steps.detect.outputs.branch }}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Abort if branch exists
-        if: steps.branch-check.outputs.exists == 'true'
-        run: echo "Branch ${{ steps.detect.outputs.branch }} already exists, skipping."
-
-      - name: Create branch, commit & push
-        if: steps.branch-check.outputs.exists == 'false'
+      - name: Create branch and commit changes
+        if: steps.detect.outputs.skip != 'true' && steps.branch-check.outputs.exists == 'false'
         run: |
-          BR=${{ steps.detect.outputs.branch }}
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BR"
-          # remove snapshot files so they don’t get added
+          PLAYER_ID="${{ steps.detect.outputs.player_id }}"
+          BRANCH="${{ steps.detect.outputs.branch }}"
+          
+          echo "Creating branch $BRANCH for player $PLAYER_ID"
+          git checkout -b "$BRANCH"
+        
           rm -f before.txt after.txt
-          # add only the new dir
-          git add "$NEW_DIR"
-          git commit -m "chore: update YouTube player script for $NEW_DIR"
-          git push --set-upstream origin "$BR"
+          
+          
+          git add "$PLAYER_ID"
+          
+          git commit -m "chore: update YouTube player script for $PLAYER_ID"
+          git push --set-upstream origin "$BRANCH"
 
       - name: Create Pull Request
-        if: steps.branch-check.outputs.exists == 'false'
+        if: steps.detect.outputs.skip != 'true' && steps.branch-check.outputs.exists == 'false'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: dev
+          base: main
           branch: ${{ steps.detect.outputs.branch }}
           title: "Update player script: ${{ steps.detect.outputs.player_id }}"
           commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
           body: |
             This PR updates the YouTube decryption script for player ID `${{ steps.detect.outputs.player_id }}`.
-            - Generated on ${{ github.run_date }}
+            - Generated on ${{ github.run_id }}
             - Includes the new `base.js` bundle.
           labels: automated
