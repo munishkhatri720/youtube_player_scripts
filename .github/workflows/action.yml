@@ -56,6 +56,13 @@ jobs:
         if: steps.detect.outputs.skip == 'true'
         run: echo "Nothing to update."
 
+      - name: Debug file listing
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          PLAYER_ID="${{ steps.detect.outputs.player_id }}"
+          echo "New directory contents:"
+          ls -la "$PLAYER_ID"
+
       - name: Configure Git
         if: steps.detect.outputs.skip != 'true'
         run: |
@@ -81,10 +88,18 @@ jobs:
           echo "Creating branch $BRANCH for player $PLAYER_ID"
           git checkout -b "$BRANCH"
         
+        
           rm -f before.txt after.txt
           
           
-          git add "$PLAYER_ID"
+          git status
+          
+          
+          git add -f "$PLAYER_ID"
+          
+          
+          git status
+          
           
           git commit -m "chore: update YouTube player script for $PLAYER_ID"
           git push --set-upstream origin "$BRANCH"
