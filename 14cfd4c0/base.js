@@ -6,6 +6,7 @@ var q = ["set", "//", "L", "eb", "indexOf", "/videoplayback", "toString", "s", "
     "match", "get", "hP", "startsWith", "wJ", "?", "replace", "playerfallback", "splice", "www.youtube.com", "forEach", "cmo=", "&", "rr", "file", "yT", "fromCharCode", "=", "\\.googlevideo\\.com$", "xU", "pop", "redirector.googlevideo.com", "unshift", "throw", "---", "%3D", "ji", "\\.a1\\.googlevideo\\.com$", "cmo", "/api/manifest", "://", "1970-01-01T11:30:37.000+11:30", "reverse", "cmo=pf", "1970-01-01T01:30:32.000+01:30", "assign", "nkD6DC9wJo88Z0BjuL-_w8_", "1969-12-31T13:15:00.000-10:45", "cmo=td", ":", "1969-12-31T15:15:18.000-08:45",
     "1970-01-01T01:00:28.000+01:00", "rr?[1-9].*\\.c\\.youtube\\.com$", "vV", "1969-12-31T21:45:16.000-02:15", "a1.googlevideo.com"];
 
+    
 decrypt_nsig = function (a) {
     var l = a[q[20]](q[10]), m = [function (T, y, R, H, b) { return y(R, H, b) },
         1480418324, -1845225982, function () { for (var T = 64, y = []; ++T - y[q[9]] - 32;)switch (T) { case 58: T = 96; continue; case 91: T = 44; break; case 65: T = 47; continue; case 46: T = 153; case 123: T -= 58; default: y[q[15]](String[q[60]](T)) }return y },
