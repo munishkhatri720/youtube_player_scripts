@@ -56,12 +56,9 @@ jobs:
         if: steps.detect.outputs.skip == 'true'
         run: echo "Nothing to update."
 
-      - name: Debug file listing
+      - name: Debug new directory
         if: steps.detect.outputs.skip != 'true'
-        run: |
-          PLAYER_ID="${{ steps.detect.outputs.player_id }}"
-          echo "New directory contents:"
-          ls -la "$PLAYER_ID"
+        run: ls -la "${{ steps.detect.outputs.player_id }}"
 
       - name: Configure Git
         if: steps.detect.outputs.skip != 'true'
@@ -73,7 +70,7 @@ jobs:
         if: steps.detect.outputs.skip != 'true'
         id: branch-check
         run: |
-          if git ls-remote --heads origin "refs/heads/${{ steps.detect.outputs.branch }}" | grep -q .; then
+          if git ls-remote --heads origin "${{ steps.detect.outputs.branch }}" | grep -q .; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -85,22 +82,14 @@ jobs:
           PLAYER_ID="${{ steps.detect.outputs.player_id }}"
           BRANCH="${{ steps.detect.outputs.branch }}"
           
-          echo "Creating branch $BRANCH for player $PLAYER_ID"
+          git checkout main
+          git pull origin main
           git checkout -b "$BRANCH"
-        
-        
+
           rm -f before.txt after.txt
-          
-          
-          git status
-          
-          
+
           git add -f "$PLAYER_ID"
-          
-          
-          git status
-          
-          
+
           git commit -m "chore: update YouTube player script for $PLAYER_ID"
           git push --set-upstream origin "$BRANCH"
 
@@ -115,6 +104,6 @@ jobs:
           commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
           body: |
             This PR updates the YouTube decryption script for player ID `${{ steps.detect.outputs.player_id }}`.
-            - Generated on ${{ github.run_id }}
+            - Generated on run ID `${{ github.run_id }}`
             - Includes the new `base.js` bundle.
           labels: automated
