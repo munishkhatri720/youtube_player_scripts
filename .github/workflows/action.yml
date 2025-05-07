@@ -3,7 +3,8 @@ name: Update YouTube Player Script
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"   # every hour
+    - cron: "*/1 * * * *" #every minute for testing purposes
+      
 
 permissions:
   contents: write
