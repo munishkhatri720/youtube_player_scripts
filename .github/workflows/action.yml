@@ -12,6 +12,7 @@ permissions:
 jobs:
   check-player:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,16 +50,10 @@ jobs:
             exit 0
           fi
           echo "player_id=$NEW_DIR" >> $GITHUB_OUTPUT
-          echo "branch=update-player-$NEW_DIR" >> $GITHUB_OUTPUT
-          echo "New player detected: $NEW_DIR"
 
       - name: Skip if nothing new
         if: steps.detect.outputs.skip == 'true'
         run: echo "Nothing to update."
-
-      - name: Debug new directory
-        if: steps.detect.outputs.skip != 'true'
-        run: ls -la "${{ steps.detect.outputs.player_id }}"
 
       - name: Configure Git
         if: steps.detect.outputs.skip != 'true'
@@ -66,40 +61,28 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Check remote branch
-        if: steps.detect.outputs.skip != 'true'
-        id: branch-check
-        run: |
-          if git ls-remote --heads origin "${{ steps.detect.outputs.branch }}" | grep -q .; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Create branch and commit changes
-        if: steps.detect.outputs.skip != 'true' && steps.branch-check.outputs.exists == 'false'
+        if: steps.detect.outputs.skip != 'true'
         run: |
-          PLAYER_ID="${{ steps.detect.outputs.player_id }}"
-          BRANCH="${{ steps.detect.outputs.branch }}"
-          
-          git checkout main
-          git pull origin main
-          git checkout -b "$BRANCH"
+          PLAYER=${{ steps.detect.outputs.player_id }}
+          BRANCH="update-player-$PLAYER"
+
+          # fetch & checkout existing branch or start new from main
+          git fetch origin "$BRANCH" || true
+          git checkout "$BRANCH" || git checkout -b "$BRANCH" origin/main
 
           rm -f before.txt after.txt
+          git add -f "$PLAYER"
+          git commit -m "chore: update YouTube player script for $PLAYER" || echo "→ no changes to commit"
+          git push --set-upstream origin HEAD:"$BRANCH"
 
-          git add -f "$PLAYER_ID"
-
-          git commit -m "chore: update YouTube player script for $PLAYER_ID"
-          git push --set-upstream origin "$BRANCH"
-
-      - name: Create Pull Request
-        if: steps.detect.outputs.skip != 'true' && steps.branch-check.outputs.exists == 'false'
+      - name: Create or update Pull Request
+        if: steps.detect.outputs.skip != 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          branch: ${{ steps.detect.outputs.branch }}
+          branch: update-player-${{ steps.detect.outputs.player_id }}
           title: "Update player script: ${{ steps.detect.outputs.player_id }}"
           commit-message: "chore: update YouTube player script for ${{ steps.detect.outputs.player_id }}"
           body: |
