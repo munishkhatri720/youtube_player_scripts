@@ -17,11 +17,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: main  # Start from main branch
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install UV & deps
+        run: |
+          pip install uv
+          uv sync
 
       - name: Run script and detect new player script
         id: run-script
@@ -32,7 +40,7 @@ jobs:
           BEFORE=$(find . -maxdepth 1 -type d -not -name ".git" -exec basename {} \; | sort)
 
           # Run the Python script
-          python workflow.py
+          uv run workflow.py
 
           # Capture list of directories after
           AFTER=$(find . -maxdepth 1 -type d -not -name ".git" -exec basename {} \; | sort)
@@ -41,33 +49,36 @@ jobs:
           NEW_DIR=$(comm -13 <(echo "$BEFORE") <(echo "$AFTER") | head -n 1)
 
           if [ -z "$NEW_DIR" ]; then
-            echo "❌ No new directory created by script."
-            exit 1
+            echo "no_new_dir=true" >> "$GITHUB_OUTPUT"
+            echo "No new directory created by script."
+            exit 0
           fi
 
-          echo "✅ Detected new player directory: $NEW_DIR"
+          echo "Detected new player directory: $NEW_DIR"
           echo "new_dir=$NEW_DIR" >> "$GITHUB_OUTPUT"
+          echo "no_new_dir=false" >> "$GITHUB_OUTPUT"
 
-      - name: Set up Git
+      - name: Create PR if new directory exists
+        if: steps.run-script.outputs.no_new_dir == 'false'
         run: |
+          NEW_DIR="${{ steps.run-script.outputs.new_dir }}"
+          BRANCH_NAME="add-player-${NEW_DIR}"
+
+          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create new branch and commit new directory
-        run: |
-          NEW_DIR="${{ steps.run-script.outputs.new_dir }}"
-          BRANCH="add-player-${NEW_DIR}"
-
-          git checkout -b "$BRANCH"
-          git add -f "$NEW_DIR"
+          # Create and push new branch
+          git checkout -b "$BRANCH_NAME"
+          git add "$NEW_DIR"
           git commit -m "chore: add new player script for $NEW_DIR"
-          git push origin "$BRANCH"
+          git push origin "$BRANCH_NAME"
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ format('add-player-{0}', steps.run-script.outputs.new_dir) }}
-          title: Add player script for ${{ steps.run-script.outputs.new_dir }}
-          body: |
-            This PR adds a new player script directory: `${{ steps.run-script.outputs.new_dir }}`
+          # Create PR
+          gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Add player script for $NEW_DIR" \
+            --body "This PR adds a new player script directory: \`$NEW_DIR\`"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
