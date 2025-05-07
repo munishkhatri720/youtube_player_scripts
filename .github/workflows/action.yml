@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Run script and detect new directory
+      - name: Run script and detect new player script
         id: run-script
         run: |
           set -eux
