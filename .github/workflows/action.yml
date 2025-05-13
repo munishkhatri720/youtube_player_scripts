@@ -36,16 +36,10 @@ jobs:
         run: |
           set -eux
 
-          # Capture list of directories before
           BEFORE=$(find . -maxdepth 1 -type d -not -name ".git" -exec basename {} \; | sort)
-
-          # Run the Python script
           uv run workflow.py
-
-          # Capture list of directories after
           AFTER=$(find . -maxdepth 1 -type d -not -name ".git" -exec basename {} \; | sort)
 
-          # Find the new directory
           NEW_DIR=$(comm -13 <(echo "$BEFORE") <(echo "$AFTER") | head -n 1)
 
           if [ -z "$NEW_DIR" ]; then
@@ -58,27 +52,14 @@ jobs:
           echo "new_dir=$NEW_DIR" >> "$GITHUB_OUTPUT"
           echo "no_new_dir=false" >> "$GITHUB_OUTPUT"
 
-      - name: Create PR if new directory exists
+      - name: Commit to main if new directory exists
         if: steps.run-script.outputs.no_new_dir == 'false'
         run: |
           NEW_DIR="${{ steps.run-script.outputs.new_dir }}"
-          BRANCH_NAME="add-player-${NEW_DIR}"
 
-          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create and push new branch
-          git checkout -b "$BRANCH_NAME"
           git add "$NEW_DIR"
           git commit -m "chore: add new player script for $NEW_DIR"
-          git push origin "$BRANCH_NAME"
-
-          # Create PR
-          gh pr create \
-            --base main \
-            --head "$BRANCH_NAME" \
-            --title "Add player script for $NEW_DIR" \
-            --body "This PR adds a new player script directory: \`$NEW_DIR\`"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          git push origin main
