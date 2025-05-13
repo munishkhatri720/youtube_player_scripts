@@ -62,4 +62,4 @@ jobs:
 
           git add "$NEW_DIR"
           git commit -m "chore: add new player script for $NEW_DIR"
-          git push origin main
+          git push origin test
