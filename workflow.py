@@ -26,7 +26,7 @@ NSIG_FUNCTION_TCE_PATTERN: Final[re.Pattern] = re.compile(
     re.DOTALL,
 )
 SIG_FUNCTION_ACTIONS_TCE_PATTERN: Final[re.Pattern] = re.compile(
-    r"var\s+([A-Za-z0-9_]+)\s*=\s*\{\s*(?:[A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*,\s*(?:[A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*,\s*(?:[A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*\}\s*;"
+    r"var\s+([$A-Za-z0-9_]+)\s*=\s*\{\s*(?:[$A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*,\s*(?:[$A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*,\s*(?:[$A-Za-z0-9_]+)\s*:\s*function\s*\([^)]*\)\s*\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}\s*\}\s*;"
 )
 
 
