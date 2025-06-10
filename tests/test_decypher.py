@@ -8,7 +8,7 @@ async def main():
     url = parse_qs(signature_cypher)['url'][0]
     
     async with httpx.AsyncClient() as client:
-        script = await client.get("http://raw.githubusercontent.com/munishkhatri720/youtube_player_scripts/refs/heads/main/8102da6c/base.js")
+        script = await client.get("http://raw.githubusercontent.com/munishkhatri720/youtube_player_scripts/refs/heads/main/2fb6bdf8/base.js")
        
         
         stext = script.text
